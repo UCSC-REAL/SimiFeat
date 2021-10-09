@@ -1,0 +1,8 @@
+numpy
+torch==1.7.1
+Pillow~=8.2.0
+torchvision
+tqdm
+ftfy
+regex
+pyyaml
