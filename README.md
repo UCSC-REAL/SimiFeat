@@ -1,4 +1,4 @@
-# A GOOD REPRESENTATION DETECTS NOISY LABELS
+# Detecting Corrupted Labels Without Training a Model to Predict
 
 This code is a PyTorch implementation of the paper:
 
