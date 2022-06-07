@@ -189,36 +189,30 @@ def noisify(dataset='mnist', nb_classes=10, train_labels=None, noise_type=None, 
     return train_noisy_labels, actual_noise_rate
 
 
-def noisify_instance(train_data,train_labels,noise_rate):
-    if max(train_labels)>10:
+def noisify_instance(train_data, train_labels, noise_rate):
+    if max(train_labels) > 10:
         num_class = 100
     else:
         num_class = 10
     np.random.seed(0)
 
-    q_ = np.random.normal(loc=noise_rate,scale=0.1,size=1000000)
+    q_ = np.random.normal(loc=noise_rate, scale=0.1, size=1000000)
     q = []
     for pro in q_:
         if 0 < pro < 1:
             q.append(pro)
-        if len(q)==50000:
+        if len(q) == 50000:
             break
-    
-    w = []
-    for i in range(num_class):
-        w.append(np.random.normal(loc=0,scale=1,size=(32*32*3,num_class)))
+
+    w = np.random.normal(loc=0, scale=1, size=(32 * 32 * 3, num_class))
 
     noisy_labels = []
-    T = np.zeros((num_class,num_class))
     for i, sample in enumerate(train_data):
         sample = sample.flatten()
-        p_all = np.matmul(sample,w[train_labels[i]])
+        p_all = np.matmul(sample, w)
         p_all[train_labels[i]] = -1000000
-        p_all = q[i]* F.softmax(torch.tensor(p_all),dim=0).numpy()
+        p_all = q[i] * F.softmax(torch.tensor(p_all), dim=0).numpy()
         p_all[train_labels[i]] = 1 - q[i]
-        noisy_labels.append(np.random.choice(np.arange(num_class),p=p_all/sum(p_all)))
-        T[train_labels[i]][noisy_labels[i]] += 1
-    over_all_noise_rate = 1 - float(torch.tensor(train_labels).eq(torch.tensor(noisy_labels)).sum())/50000
-    T = T/np.sum(T,axis=1)
-    print(np.round(T*100,1))
+        noisy_labels.append(np.random.choice(np.arange(num_class), p=p_all / sum(p_all)))
+    over_all_noise_rate = 1 - float(torch.tensor(train_labels).eq(torch.tensor(noisy_labels)).sum()) / 50000
     return noisy_labels, over_all_noise_rate
