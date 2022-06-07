@@ -38,7 +38,7 @@ def set_model_min(config):
     print(f'Use model {config.pre_type}')
     if config.pre_type == 'CLIP':
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        model, preprocess = clip.load('ViT-B/32', device)  # RN50, RN101, RN50x4, ViT-B/32
+        model, preprocess = clip.load('ViT-B/32', device, jit=False)  # RN50, RN101, RN50x4, ViT-B/32
         return model, preprocess
 
     else:
