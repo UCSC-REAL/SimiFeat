@@ -1,6 +1,6 @@
 import torchvision.transforms as transforms
 from .cifar import CIFAR10, CIFAR100
-
+from uci.uci_dataloader import DataLoader as ucidata
 train_cifar10_transform = transforms.Compose([
     transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
@@ -110,5 +110,13 @@ def input_dataset_clip(dataset, noise_type, noise_ratio, transform=None, noise_f
         num_classes = 100
         num_training_samples = len(train_dataset.train_noisy_labels)
         num_testing_samples = 10000
+    elif dataset == 'uci':
+        loader = ucidata('splice')
+        train_dataset, test_dataset = loader.prepare_train_test({'e0':noise_ratio,'e1':noise_ratio})
+
+        num_classes = train_dataset.unique_class()
+        num_training_samples = len(train_dataset.label)
+        num_testing_samples = len(test_dataset.label)
+
 
     return train_dataset, test_dataset, num_classes, num_training_samples, num_testing_samples

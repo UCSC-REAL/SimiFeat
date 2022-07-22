@@ -29,7 +29,7 @@ parser.add_argument('--label_file_path', type=str, help='the path of noisy label
 parser.add_argument('--num_epoch', type=int, default=1, help='num of epochs')
 parser.add_argument('--min_similarity', type=float, help='min_similarity', default=0.0)
 parser.add_argument('--Tii_offset', type=float, help='Tii_offset', default=1.0)
-parser.add_argument('--num_classes', type=int, default=10, help='num of classes')
+parser.add_argument('--num_classes', type=int, default=2, help='num of classes')
 parser.add_argument('--method', type=str, help='mv or rank1', default='rank1')
 
 
@@ -218,14 +218,14 @@ def noniterate_detection(config, record, train_dataset, sel_noisy=[]):
     sel_noisy = np.array(sel_noisy)
     sel_clean = np.array(list(set(data_set['index'].tolist()) ^ set(sel_noisy)))
 
-    noisy_in_sel_noisy = np.sum(train_dataset.noise_or_not[sel_noisy]) / sel_noisy.shape[0]
-    precision_noisy = noisy_in_sel_noisy
-    recall_noisy = np.sum(train_dataset.noise_or_not[sel_noisy]) / np.sum(train_dataset.noise_or_not)
+    # noisy_in_sel_noisy = np.sum(train_dataset.noise_or_not[sel_noisy]) / sel_noisy.shape[0]
+    # precision_noisy = noisy_in_sel_noisy
+    # recall_noisy = np.sum(train_dataset.noise_or_not[sel_noisy]) / np.sum(train_dataset.noise_or_not)
 
 
-    print(f'[noisy] precision: {precision_noisy}')
-    print(f'[noisy] recall: {recall_noisy}')
-    print(f'[noisy] F1-score: {2.0 * precision_noisy * recall_noisy / (precision_noisy + recall_noisy)}')
+    # print(f'[noisy] precision: {precision_noisy}')
+    # print(f'[noisy] recall: {recall_noisy}')
+    # print(f'[noisy] F1-score: {2.0 * precision_noisy * recall_noisy / (precision_noisy + recall_noisy)}')
 
     return sel_noisy, sel_clean, data_set['index']
 
@@ -250,11 +250,11 @@ if __name__ == "__main__":
     if config.dataset in ['cifar10', 'cifar100']:
         crop = transforms.RandomCrop(32, padding=4)
         normalize = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-    elif config.dataset in ['stl10']:
+    elif config.dataset in ['stl10','uci']:
         crop = transforms.RandomCrop(96, padding=12)
         normalize = transforms.Normalize((0.44671097, 0.4398105, 0.4066468), (0.2603405, 0.25657743, 0.27126738))
-    else:
-        raise NameError('Undefined dataset')
+    # else:
+    #     raise NameError('Undefined dataset')
 
     if config.pre_type == "CLIP":
         preprocess_rand = transforms.Compose([crop,
@@ -280,9 +280,16 @@ if __name__ == "__main__":
                                                                                 noise_file=config.label_file_path)
     config.num_classes = num_classes
     config.num_training_samples = num_training_samples
+    print(train_dataset.imgs.shape)
+    # print(type(train_dataset))
     print(f'num_training_samples is {num_training_samples}')
-
+    train_dataloader_EF = torch.utils.data.DataLoader(train_dataset,
+                                                      batch_size=256,
+                                                      shuffle=True,
+                                                      num_workers=4,
+                                                      drop_last=False)
     sel_noisy_rec = []
+
     # for config.cnt in [5000, 15000, 50000]:
     for loop_i in range(1):
         train_dataloader_EF = torch.utils.data.DataLoader(train_dataset,
@@ -303,11 +310,15 @@ if __name__ == "__main__":
             record = [[] for _ in range(config.num_classes)]
 
             for i_batch, (feature, label, index) in enumerate(train_dataloader_EF):
+
                 feature = feature.to(config.device)
                 label = label.to(config.device)
                 with torch.no_grad():
                     if config.pre_type == "CLIP":
                         extracted_feature = model_pre.encode_image(feature)
+                    elif config.dataset == 'uci':
+                        extracted_feature = feature.reshape(feature.shape[0], -1)
+
                     elif 'ssl' in config.pre_type:
                         extracted_feature, _ = model_pre(feature)
                     else:
@@ -358,14 +369,14 @@ if __name__ == "__main__":
                     f'We find {sel_clean_summary.shape[0] - np.sum(sel_clean_summary) - np.sum(nan_flag * 1)} corrupted instances from {sel_clean_summary.shape[0] - np.sum(nan_flag * 1)} instances')
 
                 # noisy
-                noisy_in_sel_noisy = np.sum(train_dataset.noise_or_not[sel_noisy_summary]) / np.sum(sel_noisy_summary)
-                precision_noisy = noisy_in_sel_noisy
-                recall_noisy = np.sum(train_dataset.noise_or_not[sel_noisy_summary]) / np.sum(
-                    train_dataset.noise_or_not[(1 - nan_flag).astype(bool)])
-
-                print(f'[Epoch {epoch + 1}] precision noisy: {precision_noisy}')
-                print(f'[Epoch {epoch + 1}] recall noisy: {recall_noisy}')
-                print(
-                    f'[Epoch {epoch + 1}] F1-score noisy: {2.0 * precision_noisy * recall_noisy / (precision_noisy + recall_noisy)}')
-                torch.save(sel_clean_rec,
-                           f'result_{config.pre_type}_{config.method}_{config.dataset}_{config.noise_type}_e{config.num_epoch}_k{config.k}.pt')
+                # noisy_in_sel_noisy = np.sum(train_dataset.noise_or_not[sel_noisy_summary]) / np.sum(sel_noisy_summary)
+                # precision_noisy = noisy_in_sel_noisy
+                # recall_noisy = np.sum(train_dataset.noise_or_not[sel_noisy_summary]) / np.sum(
+                #     train_dataset.noise_or_not[(1 - nan_flag).astype(bool)])
+                #
+                # print(f'[Epoch {epoch + 1}] precision noisy: {precision_noisy}')
+                # print(f'[Epoch {epoch + 1}] recall noisy: {recall_noisy}')
+                # print(
+                #     f'[Epoch {epoch + 1}] F1-score noisy: {2.0 * precision_noisy * recall_noisy / (precision_noisy + recall_noisy)}')
+                # torch.save(sel_clean_rec,
+                #            f'result_{config.pre_type}_{config.method}_{config.dataset}_{config.noise_type}_e{config.num_epoch}_k{config.k}.pt')
