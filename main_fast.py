@@ -259,7 +259,9 @@ if __name__ == "__main__":
     # else:
     #     raise NameError('Undefined dataset')
 
-    if config.pre_type == "CLIP":
+    if config.dataset=='uci':
+        preprocess_rand=None
+    elif config.pre_type == "CLIP":
         preprocess_rand = transforms.Compose([crop,
                                               transforms.RandomHorizontalFlip(),
                                               preprocess])
