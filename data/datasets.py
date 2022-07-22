@@ -69,7 +69,7 @@ def input_dataset(dataset, noise_type, noise_ratio, transform=True, noise_file=N
     return train_dataset, test_dataset, num_classes, num_training_samples, num_testing_samples
 
 
-def input_dataset_clip(dataset, noise_type, noise_ratio, transform=None, noise_file=None):
+def input_dataset_clip(dataset, noise_type, noise_ratio, transform=None, noise_file=None,uci_name=None):
     print(dataset)
     if dataset == 'cifar10':
         train_dataset = CIFAR10(root='~/data/',
@@ -111,7 +111,8 @@ def input_dataset_clip(dataset, noise_type, noise_ratio, transform=None, noise_f
         num_training_samples = len(train_dataset.train_noisy_labels)
         num_testing_samples = 10000
     elif dataset == 'uci':
-        loader = ucidata('splice')
+        print(uci_name)
+        loader = ucidata(uci_name)
         train_dataset, test_dataset = loader.prepare_train_test({'e0':noise_ratio,'e1':noise_ratio})
 
         num_classes = train_dataset.unique_class()

@@ -13,6 +13,9 @@ import global_var
 
 # Options ----------------------------------------------------------------------
 parser = argparse.ArgumentParser()
+parser.add_argument("--uci_data",type=str,default="banana",help= 'heart, breast, breast2, german, banana, image, '
+                                                                 'thyroid, titanic, splice, twonorm, waveform, '
+                                                                 'flare-solar, diabetes,susy, higgs')
 parser.add_argument("--pre_type", type=str, default='CLIP')  # image, cifar
 parser.add_argument('--noise_rate', type=float, help='corruption rate, should be less than 1', default=0.6)
 parser.add_argument('--noise_type', type=str, default='manual')  # manual
@@ -277,7 +280,7 @@ if __name__ == "__main__":
     train_dataset, _, num_classes, num_training_samples, _ = input_dataset_clip(config.dataset, config.noise_type,
                                                                                 config.noise_rate,
                                                                                 transform=preprocess_rand,
-                                                                                noise_file=config.label_file_path)
+                                                                                noise_file=config.label_file_path,uci_name=config.uci_data)
     config.num_classes = num_classes
     config.num_training_samples = num_training_samples
     print(train_dataset.imgs.shape)
@@ -314,11 +317,10 @@ if __name__ == "__main__":
                 feature = feature.to(config.device)
                 label = label.to(config.device)
                 with torch.no_grad():
-                    if config.pre_type == "CLIP":
-                        extracted_feature = model_pre.encode_image(feature)
-                    elif config.dataset == 'uci':
+                    if config.dataset == 'uci':
                         extracted_feature = feature.reshape(feature.shape[0], -1)
-
+                    elif config.pre_type == "CLIP":
+                        extracted_feature = model_pre.encode_image(feature)
                     elif 'ssl' in config.pre_type:
                         extracted_feature, _ = model_pre(feature)
                     else:
@@ -327,7 +329,7 @@ if __name__ == "__main__":
                     record[label[i]].append({'feature': extracted_feature[i].detach().cpu(), 'index': index[i]})
                 if i_batch > 200:
                     break
-
+            print(len(record[0]))
             time1 = time.time()
 
             if config.method == 'both':
